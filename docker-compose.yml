@@ -1,0 +1,36 @@
+services:
+  api:
+    build: ./apps/api
+    ports: ["8000:8000"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://fieldsight:fieldsight@postgres:5432/fieldsight
+      REDIS_URL: redis://redis:6379/0
+      FIELDSIGHT_DEMO_MODE: "true"
+    depends_on: [postgres, redis]
+  worker:
+    build: ./apps/api
+    command: ["python", "-m", "app.worker"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://fieldsight:fieldsight@postgres:5432/fieldsight
+      REDIS_URL: redis://redis:6379/0
+      FIELDSIGHT_DEMO_MODE: "true"
+    depends_on: [postgres, redis]
+  web:
+    build: ./apps/web
+    ports: ["3000:3000"]
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    depends_on: [api]
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: fieldsight
+      POSTGRES_USER: fieldsight
+      POSTGRES_PASSWORD: fieldsight
+    ports: ["5432:5432"]
+    volumes: ["fieldsight-postgres:/var/lib/postgresql/data"]
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+volumes:
+  fieldsight-postgres:

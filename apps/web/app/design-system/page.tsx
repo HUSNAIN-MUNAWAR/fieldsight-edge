@@ -1,0 +1,3 @@
+import Link from 'next/link';
+const states=['Trusted','Healthy','Warning','Critical','Offline','Verified','Awaiting approval','Candidate'];
+export default function DesignSystem(){return <main className="ops-page"><header><Link href="/">← Mission control</Link><small>INTERNAL DESIGN SYSTEM</small><h1>Industrial operations patterns</h1><p>Semantic state patterns used across the FieldSight Edge local demo. This internal route is not a public product claim.</p></header><section className="ops-grid">{states.map(state=><article key={state}><label>STATUS PATTERN</label><b>{state}</b><p>Readable status hierarchy, non-color text labels, and evidence-first context.</p></article>)}</section></main>}

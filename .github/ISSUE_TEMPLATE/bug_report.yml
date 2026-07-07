@@ -1,0 +1,46 @@
+name: Bug report
+description: Report a reproducible defect in the local demo, API, web console, docs, or tooling.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What is broken?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Provide a minimal sequence that reproduces the issue.
+      placeholder: |
+        1. Seed the demo data
+        2. Start the API and web console
+        3. Open /review
+        4. Observe...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment and checks
+      description: Include OS, Python/Node versions, and any commands you already ran.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs or screenshots
+      description: Remove secrets or private local paths before submitting.

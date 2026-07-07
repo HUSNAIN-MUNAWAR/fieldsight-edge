@@ -1,0 +1,90 @@
+'use client';
+
+import Link from 'next/link';
+import { ChangeEvent, FormEvent, useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { apiFetch, operationalContext } from '../lib/api';
+
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+type Kind = 'missions' | 'media' | 'changes' | 'risk' | 'quality' | 'alerts' | 'security' | 'field';
+type RecordLike = Record<string, any>;
+
+const navigation = [
+  ['/', 'Mission control'], ['/map', 'Geospatial command map'], ['/missions', 'Mission planning'], ['/media', 'Media intake'],
+  ['/review', 'Review operations'], ['/changes', 'Change explorer'], ['/risk', 'Asset risk center'], ['/defects', 'Maintenance planning'],
+  ['/devices', 'Edge fleet'], ['/models', 'Model & dataset governance'], ['/quality', 'Data quality'], ['/alerts', 'Alerts & watchlists'],
+  ['/reports', 'Reporting'], ['/security', 'Security & governance'], ['/field', 'Field operator mode'],
+];
+
+const workspaceOptions = [
+  ['org-solarvista', 'SolarVista Operations'], ['org-atlas', 'Atlas Infrastructure Services'], ['org-meridian', 'Meridian Facilities Group'],
+];
+
+function title(kind: Kind) {
+  return ({missions:'Mission planning',media:'Media intake center',changes:'Change explorer',risk:'Asset risk center',quality:'Inspection data quality',alerts:'Alerts & watchlists',security:'Security & governance',field:'Field operator mode'})[kind];
+}
+function endpoint(kind: Kind) {
+  return ({missions:'/api/v1/missions', media:'/api/v1/media?limit=24', changes:'/api/v1/assets/asset-001/changes', risk:'/api/v1/risk/center', quality:'/api/v1/quality', alerts:'/api/v1/alerts', security:'/api/v1/governance/audit', field:'/api/v1/missions'})[kind];
+}
+function Badge({value}:{value:string}) { return <span className={`p2-badge ${value.toLowerCase().replaceAll(' ','-')}`}>{value}</span>; }
+
+export function Phase2Page({kind}:{kind:Kind}) {
+  const [workspace, setWorkspace] = useState('org-solarvista');
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [message, setMessage] = useState('');
+  const queryClient = useQueryClient();
+  const context = useMemo(()=>operationalContext(workspace),[workspace]);
+  const query = useQuery({queryKey:['fieldsight-phase3',workspace,kind],queryFn:()=>apiFetch<any>(endpoint(kind),context)});
+  const mutation = useMutation({
+    mutationFn: ({path, body, method='POST'}:{path:string;body?:RecordLike;method?:string}) => apiFetch<any>(path, context, {method,body:body?JSON.stringify(body):undefined}),
+    onSuccess:(data)=>{setMessage(data.detail||data.notice||'Action recorded in the persistent demo audit trail.');queryClient.invalidateQueries({queryKey:['fieldsight-phase3',workspace]});},
+    onError:(error:Error & {requestId?:string})=>setMessage(`${error.message}${error.requestId?` (request ${error.requestId})`:''}`),
+  });
+  const action=(path:string, body?:RecordLike, method='POST')=>mutation.mutate({path,body,method});
+  return <div className="p2-shell">
+    <aside className="p2-side"><Link href="/landing" className="p2-brand">FieldSight <strong>EDGE</strong></Link><label>WORKSPACE</label><select aria-label="Workspace" value={workspace} onChange={e=>setWorkspace(e.target.value)}>{workspaceOptions.map(([id,name])=><option value={id} key={id}>{name}</option>)}</select><nav>{navigation.map(([href,label])=><Link className={label.toLowerCase().includes(title(kind).toLowerCase().split(' ')[0])?'active':''} key={href} href={href}>{label}</Link>)}</nav><div className="p2-side-bottom"><span className="pulse"/> Persistent demo mode<br/><small>CPU-first · synthetic data clearly labeled</small></div></aside>
+    <main className="p2-main"><header className="p2-top"><div><small>PHASE 3 CONTROL CENTER · LIVE API DEMO</small><h1>{title(kind)}</h1></div><div><button className="p2-command" onClick={()=>setCommandOpen(true)}>⌘ Command palette</button><Link className="p2-outline" href="/landing">Product view</Link></div></header>
+      <div className="p2-safety"><b>SIMULATION NOTICE</b> Records are persistent locally, while imagery, locations, CV outputs, metrics, and integrations are synthetic. External adapters are intentionally not configured.</div>
+      {message && <div className="p2-toast">✓ {message}<button onClick={()=>setMessage('')}>×</button></div>}
+      {query.isPending?<div className="p2-loading"><i/> Loading tenant-scoped workspace data…</div>:query.isError?<section className="p2-empty"><h2>Local API unavailable</h2><p>{(query.error as Error).message}</p><button className="p2-primary" onClick={()=>query.refetch()}>Retry</button></section>:<PageBody kind={kind} data={query.data} action={action} workspace={workspace}/>} 
+    </main>
+    {commandOpen && <div className="p2-command-layer" onClick={()=>setCommandOpen(false)}><div className="p2-command-modal" onClick={e=>e.stopPropagation()}><label>GLOBAL COMMAND PALETTE</label><h3>Jump to an operational workflow</h3>{navigation.slice(0,10).map(([href,label])=><Link href={href} onClick={()=>setCommandOpen(false)} key={href}>{label}<span>↗</span></Link>)}</div></div>}
+  </div>;
+}
+
+function PageBody({kind,data,action,workspace}:{kind:Kind;data:any;action:(path:string,body?:RecordLike)=>void;workspace:string}) {
+  if(data?.error) return <section className="p2-empty"><h2>Local API unavailable</h2><p>{data.error}</p><code>cd apps/api && uvicorn app.main:app --reload</code></section>;
+  if(kind==='missions') return <Missions data={data} action={action} workspace={workspace}/>;
+  if(kind==='media') return <Media data={data} workspace={workspace}/>;
+  if(kind==='changes') return <Changes data={data}/>;
+  if(kind==='risk') return <Risk data={data} action={action}/>;
+  if(kind==='quality') return <Quality data={data}/>;
+  if(kind==='alerts') return <Alerts data={data} action={action}/>;
+  if(kind==='security') return <Security data={data}/>;
+  return <FieldOperator data={data} action={action}/>;
+}
+
+function Missions({data,action,workspace}:{data:any[];action:(path:string,body?:RecordLike)=>void;workspace:string}) {
+  const [creating,setCreating]=useState(false); const [name,setName]=useState('Zone C follow-up inspection');
+  const defaultProject=workspace==='org-solarvista'?'prj-solar-alpha':workspace==='org-atlas'?'prj-utility-north':'prj-roof-east';
+  const defaultSite=workspace==='org-solarvista'?'site-alpha-a':workspace==='org-atlas'?'site-utility-b':'site-roof-a';
+  return <div className="p2-stack"><section className="p2-hero"><div><label>INSPECTION OPERATIONS</label><h2>Plan field capture with evidence, safety, and review policy attached.</h2><p>Missions create a durable boundary between planned field work, media intake, edge queues, inference, human review, and reporting.</p></div><button className="p2-primary" onClick={()=>setCreating(!creating)}>+ Create mission</button></section>{creating&&<section className="p2-panel p2-form"><label>MISSION NAME</label><input value={name} onChange={e=>setName(e.target.value)}/><div className="p2-grid3"><div><label>TYPE</label><select><option>Follow-up inspection</option><option>Routine inspection</option><option>Maintenance verification</option></select></div><div><label>PRIORITY</label><select><option>high</option><option>normal</option></select></div><div><label>OFFLINE MODE</label><div className="p2-static">Enabled · queue safely if uplink drops</div></div></div><button className="p2-primary" onClick={()=>action('/api/v1/missions',{name,project_id:defaultProject,site_id:defaultSite,mission_type:'Follow-up inspection',priority:'high',zones:['Zone C']})}>Create persistent mission →</button></section>}<div className="p2-card-grid">{data.map((m:RecordLike)=><article className="p2-panel p2-mission" key={m.id}><header><Badge value={m.state}/><span>{m.priority.toUpperCase()}</span></header><h3>{m.name}</h3><p>{m.mission_type} · Due {m.due_date||'not scheduled'}</p><div className="p2-progress"><span style={{width:`${Math.min(100, 25+(m.capture_count||0)*12)}%`}}/></div><footer><span>{m.capture_count} captures</span><span>{m.assigned_operator||'Unassigned'}</span></footer><div className="p2-checks">{(m.checklist||[]).map((x:RecordLike)=><span key={x.label}>{x.done?'✓':'○'} {x.label}</span>)}</div></article>)}</div></div>;
+}
+
+function Media({data,workspace}:{data:any[];workspace:string}) {
+  const [file,setFile]=useState<File|null>(null); const [status,setStatus]=useState(''); const [busy,setBusy]=useState(false);
+  const upload=async(e:FormEvent)=>{e.preventDefault();if(!file){setStatus('Choose an image first.');return;}setBusy(true);const f=new FormData();f.append('file',file);f.append('asset_id',workspace==='org-solarvista'?'asset-001':workspace==='org-atlas'?'asset-004':'asset-003');try{const r=await fetch(API+'/api/v1/media/intake',{method:'POST',headers:{'X-FieldSight-Workspace':workspace,'Idempotency-Key':`ui-${file.name}-${file.size}`},body:f});const j=await r.json();setStatus(j.duplicate?'Duplicate capture was safely detected.':`Validated; inference job ${j.inference_job} created.`);}catch{setStatus('Upload failed because the local API was unavailable.');}finally{setBusy(false);}};
+  return <div className="p2-media-layout"><section className="p2-panel p2-intake"><label>MEDIA INTAKE CENTER</label><h2>Validate evidence before it changes operations.</h2><p>MIME, extension, duplicate, metadata, quality, and evidence-lineage checks run before deterministic inference is queued.</p><form onSubmit={upload}><label className="p2-drop"><input type="file" accept="image/*" onChange={(e:ChangeEvent<HTMLInputElement>)=>setFile(e.target.files?.[0]||null)}/><b>{file?file.name:'Drop inspection image or choose a file'}</b><small>Local filesystem object storage · max 25 MB demo policy</small></label><button className="p2-primary" disabled={busy}>{busy?'Validating…':'Validate & run deterministic inference →'}</button></form>{status&&<div className="p2-result">{status}</div>}<div className="p2-lineage"><b>Evidence lineage</b><span>Original media</span>→<span>Capture</span>→<span>Inference</span>→<span>Finding</span>→<span>Review</span>→<span>Work order</span>→<span>Report</span></div></section><section className="p2-panel p2-imports"><header><label>RECENT IMPORTS</label><b>{data.length} retained records</b></header>{data.slice(0,8).map((m:RecordLike)=><article key={m.id}><img src={`${API}/api/v1/media/${m.id}/preview.svg`} alt="Synthetic capture evidence"/><div><b>{m.filename}</b><small>{m.source} · {new Date(m.captured_at).toLocaleDateString()}</small><span>{m.validation?.state||'Healthy'} · quality {Math.round(m.quality?.score||0)}</span></div></article>)}</section></div>;
+}
+
+function Changes({data}:{data:any}) { return <div className="p2-stack"><section className="p2-hero"><div><label>TEMPORAL COMPARISON</label><h2>See what changed, and why it matters.</h2><p>Deterministic comparison joins capture history, evidence records, review state, risk context, and maintenance activity. It is clearly not pixel-level change detection.</p></div><Badge value="Deterministic demo"/></section><div className="p2-compare"><section className="p2-panel"><header><label>BASELINE CAPTURE</label><b>{data.baseline_date}</b></header><img src={`${API}/api/v1/media/${data.baseline?.id}/preview.svg`} alt="Synthetic baseline evidence"/></section><section className="p2-panel"><header><label>COMPARISON CAPTURE</label><b>{data.comparison_date}</b></header><img src={`${API}/api/v1/media/${data.comparison?.id}/preview.svg`} alt="Synthetic comparison evidence"/></section><section className="p2-panel p2-change-summary"><label>FINDING DELTA</label><h3>{data.asset?.name}</h3><div className="p2-stat-row"><span><b>{data.finding_delta?.new}</b>new</span><span><b>{data.finding_delta?.worsened}</b>worsened</span><span><b>{data.finding_delta?.resolved}</b>resolved</span></div>{(data.results||[]).map((r:RecordLike)=><p key={r.type}><Badge value={r.severity_delta}/>{r.detail}</p>)}<button className="p2-primary">Generate change report draft</button></section></div></div> }
+
+function Risk({data,action}:{data:any;action:(path:string,body?:RecordLike)=>void}) { return <div className="p2-stack"><section className="p2-risk-hero"><div><label>EXPLAINABLE ASSET-RISK ENGINE</label><h2>Rule-assisted maintenance priority—not a predictive accuracy claim.</h2><p>Risk combines evidence severity and confidence, review state, open maintenance, inspection freshness, and capture-quality warnings.</p></div><div className="p2-levels">{Object.entries(data.by_level||{}).map(([k,v])=><span key={k}><b>{String(v)}</b>{k}</span>)}</div></section><section className="p2-panel p2-risk-table"><header><div><label>HIGH-RISK ASSETS</label><h3>Evidence-linked maintenance priorities</h3></div><button className="p2-outline">Export risk report</button></header>{(data.high_risk_assets||[]).slice(0,12).map((item:RecordLike)=><article key={item.asset.id}><b>{item.asset.name}</b><span>{item.asset.asset_type}</span><Badge value={item.level}/><strong>{item.score}/100</strong><p>{item.drivers?.[0]?.detail||'No driver available'}</p><button onClick={()=>action('/api/v1/assistant/insights',{question:`Why is ${item.asset.name} risk increasing?`,mode:'Maintenance Planning View'})}>Explain</button></article>)}</section></div> }
+
+function Quality({data}:{data:any}) { return <div className="p2-stack"><section className="p2-quality-grid">{[['Overall score',data.overall_score],['Capture quality',data.capture_quality],['Coverage quality',data.coverage_quality],['Metadata completeness',data.metadata_completeness],['Review backlog',data.review_backlog],['Evidence completeness',data.evidence_completeness]].map(([l,v])=><article className="p2-panel" key={String(l)}><label>{l}</label><b>{String(v)}{String(l).includes('score')||String(l).includes('quality')||String(l).includes('completeness')?'%':''}</b><small>synthetic quality indicator</small></article>)}</section><section className="p2-panel p2-quality-issues"><header><div><label>ACTIVE QUALITY ISSUES</label><h3>Problems that qualify inspection confidence</h3></div><Badge value="Data quality ≠ model quality"/></header>{(data.issues||[]).length?(data.issues||[]).map((x:RecordLike,i:number)=><article key={i}><Badge value={x.severity}/><div><b>{x.type}</b><p>{x.detail}</p><small>{x.suggested_remediation}</small></div><button className="p2-outline">Acknowledge</button></article>):<div className="p2-empty">No active quality issues in this workspace.</div>}</section></div> }
+
+function Alerts({data,action}:{data:any[];action:(path:string,body?:RecordLike)=>void}) { return <div className="p2-stack"><section className="p2-hero"><div><label>ALERT ENGINE & WATCHLISTS</label><h2>Turn significant inspection events into owned operational work.</h2><p>Alerts are scoped to the active workspace and preserve acknowledgments, assignments, related entities, and audit history.</p></div><Badge value={`${data.length} open alerts`}/></section><section className="p2-alert-list">{data.map((a:RecordLike)=><article className="p2-panel" key={a.id}><Badge value={a.severity}/><div><small>{a.category.replaceAll('_',' ')}</small><h3>{a.title}</h3><p>Related {a.entity_type}: {a.entity_id} · {a.detail?.suggested_action}</p></div><div><Badge value={a.state}/><button className="p2-primary" onClick={()=>action(`/api/v1/alerts/${a.id}/acknowledge`)}>Acknowledge</button></div></article>)}</section><section className="p2-watchlists"><article className="p2-panel"><label>WATCHLIST</label><h3>Critical assets</h3><p>Assets with verified high-severity evidence and open work.</p></article><article className="p2-panel"><label>WATCHLIST</label><h3>Edge sync risk</h3><p>Devices with offline queues, failures, or time-drift warnings.</p></article><article className="p2-panel"><label>WATCHLIST</label><h3>Review SLA</h3><p>Uncertain or escalation-required findings awaiting a reviewer.</p></article></section></div> }
+
+function Security({data}:{data:any[]}) { return <div className="p2-stack"><section className="p2-security-grid"><article className="p2-panel"><label>SECURITY CONTROLS</label><h3>Enterprise deployment boundary</h3><p>Password hashing, token tracking, tenant-scoped queries, role gates, request IDs, sensitive metadata redaction, MIME checks, size checks, and audit history are implemented.</p></article><article className="p2-panel"><label>COMPLIANCE POSTURE</label><h3>Designed to support enterprise deployment</h3><p>No SOC 2, ISO, FAA, or other certification claim is made by this demo.</p></article><article className="p2-panel"><label>API INTEGRATION</label><h3>Scoped API keys & webhooks</h3><p>Key creation, expiry, revocation model, event contracts, and delivery-log persistence are implemented boundaries.</p></article></section><section className="p2-panel p2-audit"><header><div><label>IMMUTABLE-STYLE AUDIT VIEW</label><h3>Recent governance events</h3></div><Badge value={`${data.length} records`}/></header>{data.slice(0,16).map((e:RecordLike)=><article key={e.id}><time>{new Date(e.at).toLocaleString()}</time><span>{e.actor}</span><b>{e.action}</b><small>{e.target}</small></article>)}</section></div> }
+
+function FieldOperator({data,action}:{data:any[];action:(path:string,body?:RecordLike)=>void}) { return <div className="field-phone"><header><small>FIELD OPERATOR MODE · MOBILE-FIRST</small><h2>Today’s field work</h2><p><span className="pulse"/> Device offline resilience active</p></header><section>{data.slice(0,4).map((m:RecordLike)=><article className="p2-panel" key={m.id}><Badge value={m.state}/><h3>{m.name}</h3><p>{m.mission_type} · {m.zones?.join(', ')}</p><div className="field-actions"><button className="p2-outline" onClick={()=>action(`/api/v1/devices/${m.assigned_device_id||'edge-03'}/capture`)}>Capture</button><button className="p2-primary" onClick={()=>action(`/api/v1/devices/${m.assigned_device_id||'edge-03'}/sync`)}>Sync queue</button></div></article>)}</section><footer><b>Field notes</b><textarea placeholder="Add a site observation; this demo intentionally keeps confirmation explicit."/></footer></div> }
