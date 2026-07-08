@@ -292,7 +292,7 @@ The primary API is `/api/v1/`. It has documented resource areas for auth, worksp
 
 ```mermaid
 flowchart LR
-  Client[Browser / SDK-style wrapper] --> V1[/api/v1]
+  Client[Browser / SDK-style wrapper] --> V1["/api/v1"]
   V1 --> Auth[Bearer session / workspace]
   V1 --> Scope[Tenant and role check]
   Scope --> Write[Idempotent or guarded mutation]
