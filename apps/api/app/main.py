@@ -78,15 +78,15 @@ storage = LocalStorage()
 # explicit Alembic migration remains required in production mode.
 if SETTINGS.environment != "production":
     Base.metadata.create_all(bind=engine)
+    with SessionLocal() as _bootstrap_db:
+        seed_demo_data(_bootstrap_db)
+        seed_phase3_data(_bootstrap_db)
 
 
 def aware_datetime(value):
     if value is None or value.tzinfo is not None:
         return value
     return value.replace(tzinfo=timezone.utc)
-    with SessionLocal() as _bootstrap_db:
-        seed_demo_data(_bootstrap_db)
-        seed_phase3_data(_bootstrap_db)
 
 
 @asynccontextmanager

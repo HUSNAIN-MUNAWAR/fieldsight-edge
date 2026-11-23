@@ -10,6 +10,7 @@ Examples:
   python agent.py sync-now --device edge-03
   python agent.py health --device edge-03
 """
+
 from __future__ import annotations
 
 import argparse
@@ -67,33 +68,66 @@ def run_demo_mission(args: argparse.Namespace) -> None:
     set_mode(args, "offline")
     for n in range(args.count):
         event = capture(args)
-        print(f"capture {n+1}: {event['sync_job']['state']} · {event['media']['id']}")
+        print(f"capture {n + 1}: {event['sync_job']['state']} · {event['media']['id']}")
         time.sleep(0.15)
     set_mode(args, "online")
     result = sync(args)
-    print(f"sync: {result['synchronized_jobs']} job(s) synchronized · {len(result['findings'])} finding(s) created")
+    print(
+        f"sync: {result['synchronized_jobs']} job(s) synchronized · {len(result['findings'])} finding(s) created"
+    )
     print_json(result["device"])
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="FieldSight Edge offline queue simulator")
-    parser.add_argument("command", nargs="?", default="run-demo-mission", choices=["run-demo-mission", "simulate-capture", "queue-status", "set-offline", "set-online", "sync-now", "health", "simulate-failure", "list-jobs", "clear-cache-safe"])
+    parser = argparse.ArgumentParser(
+        description="FieldSight Edge offline queue simulator"
+    )
+    parser.add_argument(
+        "command",
+        nargs="?",
+        default="run-demo-mission",
+        choices=[
+            "run-demo-mission",
+            "simulate-capture",
+            "queue-status",
+            "set-offline",
+            "set-online",
+            "sync-now",
+            "health",
+            "simulate-failure",
+            "list-jobs",
+            "clear-cache-safe",
+        ],
+    )
     parser.add_argument("--api", default="http://localhost:8000")
     parser.add_argument("--device", default="edge-03")
     parser.add_argument("--count", "--cycles", type=int, default=4)
-    parser.add_argument("--failure", choices=["corrupt-file", "time-drift", "missing-metadata"], default="corrupt-file")
+    parser.add_argument(
+        "--failure",
+        choices=["corrupt-file", "time-drift", "missing-metadata"],
+        default="corrupt-file",
+    )
     args = parser.parse_args()
     try:
-        if args.command == "run-demo-mission": run_demo_mission(args)
+        if args.command == "run-demo-mission":
+            run_demo_mission(args)
         elif args.command == "simulate-capture":
-            for _ in range(args.count): print_json(capture(args))
-        elif args.command == "set-offline": print_json(set_mode(args, "offline"))
-        elif args.command == "set-online": print_json(set_mode(args, "online"))
-        elif args.command == "sync-now": print_json(sync(args))
-        elif args.command in {"queue-status", "health", "list-jobs"}: print_json(status(args))
-        elif args.command == "simulate-failure": print_json(capture(args, args.failure))
+            for _ in range(args.count):
+                print_json(capture(args))
+        elif args.command == "set-offline":
+            print_json(set_mode(args, "offline"))
+        elif args.command == "set-online":
+            print_json(set_mode(args, "online"))
+        elif args.command == "sync-now":
+            print_json(sync(args))
+        elif args.command in {"queue-status", "health", "list-jobs"}:
+            print_json(status(args))
+        elif args.command == "simulate-failure":
+            print_json(capture(args, args.failure))
         elif args.command == "clear-cache-safe":
-            print("No local queue rows are deleted automatically. Synchronize and verify evidence first.")
+            print(
+                "No local queue rows are deleted automatically. Synchronize and verify evidence first."
+            )
     except RuntimeError as exc:
         print(str(exc), file=sys.stderr)
         raise SystemExit(1)

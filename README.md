@@ -74,6 +74,20 @@ Additional captures:
 
 All screenshots are clearly synthetic demo data and are never presented as customer or live industrial evidence.
 
+### Measured local runtime evidence
+
+Run the real auth, offline queue, sync, deterministic inference, and report path:
+
+```bash
+make runtime-evidence
+```
+
+The command writes an API trace, CSV, MP4 state animation, poster, PDF report,
+and hash-addressed summary under [`docs/runtime_evidence/`](docs/runtime_evidence/).
+The evidence remains explicitly bounded to SQLite, synthetic capture bytes, and
+the local deterministic provider; it is not a physical camera or production
+model-accuracy claim.
+
 ## Quick start
 
 1. Start the API in deterministic local mode and seed the demo workspace.

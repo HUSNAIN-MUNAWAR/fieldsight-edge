@@ -1,0 +1,41 @@
+{
+  "status": "completed",
+  "workflow": "login -> offline mode -> 3 captures -> queue inspection -> sync -> PDF report",
+  "device": "edge-03",
+  "captures_queued": 3,
+  "synchronized_jobs": 4,
+  "findings_created": 3,
+  "all_http_statuses": [
+    200
+  ],
+  "video": {
+    "width": 1280,
+    "height": 720,
+    "fps": 2.0,
+    "rendered_frames": 7,
+    "decoded_frames": 7
+  },
+  "claim_boundary": "This is a local SQLite deterministic demo with synthetic captures and deterministic inference; it does not claim physical camera accuracy or a deployed edge model.",
+  "artifacts": {
+    "edge-runtime-trace.json": {
+      "bytes": 1378,
+      "sha256": "6ed2ec260e2f61002bad5fcbbd63c90a7c9c94ea053f0e4afe02ca8ceff598bb"
+    },
+    "edge-runtime-trace.csv": {
+      "bytes": 577,
+      "sha256": "f1ff0f1d0567aecc8c08ef87d67bec460b3bd88b8b07b97becd784471e6889ed"
+    },
+    "edge-runtime-trace.mp4": {
+      "bytes": 104727,
+      "sha256": "1edba117c9636d78dc097198d3ce351d9aeb93c92f725d0fb9797fa33c526e0d"
+    },
+    "edge-runtime-trace-poster.jpg": {
+      "bytes": 68043,
+      "sha256": "62764a05bbff2718cdb4f75ca9f0aafd34dc56c8b7bc57ea58ce9a51941f0b94"
+    },
+    "fieldsight-runtime-report.pdf": {
+      "bytes": 2439,
+      "sha256": "29a68d7b8365b06e7989134e69fd1b5fa7d05eef64bcfe46030303c3047f9923"
+    }
+  }
+}

@@ -1,0 +1,61 @@
+[
+  {
+    "sequence": 1,
+    "action": "set offline",
+    "device": "edge-03",
+    "state": "offline",
+    "status_code": 200
+  },
+  {
+    "sequence": 2,
+    "action": "capture while offline",
+    "device": "edge-03",
+    "state": "Queued offline",
+    "status_code": 200,
+    "media_id": "media_da1c59a30a52ed65",
+    "queued_jobs": "Queued offline"
+  },
+  {
+    "sequence": 3,
+    "action": "capture while offline",
+    "device": "edge-03",
+    "state": "Queued offline",
+    "status_code": 200,
+    "media_id": "media_e138cc4f6218d15d",
+    "queued_jobs": "Queued offline"
+  },
+  {
+    "sequence": 4,
+    "action": "capture while offline",
+    "device": "edge-03",
+    "state": "Queued offline",
+    "status_code": 200,
+    "media_id": "media_9134827b8e25121b",
+    "queued_jobs": "Queued offline"
+  },
+  {
+    "sequence": 5,
+    "action": "inspect offline queue",
+    "device": "edge-03",
+    "state": "offline",
+    "status_code": 200,
+    "queued_jobs": 4
+  },
+  {
+    "sequence": 6,
+    "action": "synchronize",
+    "device": "edge-03",
+    "state": "online",
+    "status_code": 200,
+    "synchronized_jobs": 4,
+    "findings_created": 3
+  },
+  {
+    "sequence": 7,
+    "action": "export report",
+    "device": "edge-03",
+    "state": "report generated",
+    "status_code": 200,
+    "report_bytes": 2439
+  }
+]

@@ -1,0 +1,8 @@
+action,device,findings_created,media_id,queued_jobs,report_bytes,sequence,state,status_code,synchronized_jobs
+set offline,edge-03,,,,,1,offline,200,
+capture while offline,edge-03,,media_da1c59a30a52ed65,Queued offline,,2,Queued offline,200,
+capture while offline,edge-03,,media_e138cc4f6218d15d,Queued offline,,3,Queued offline,200,
+capture while offline,edge-03,,media_9134827b8e25121b,Queued offline,,4,Queued offline,200,
+inspect offline queue,edge-03,,,4,,5,offline,200,
+synchronize,edge-03,3,,,,6,online,200,4
+export report,edge-03,,,,2439,7,report generated,200,

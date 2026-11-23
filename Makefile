@@ -1,4 +1,4 @@
-.PHONY: api web test lint seed migrate edge-demo
+.PHONY: api web test lint seed migrate edge-demo runtime-evidence
 api:
 	cd apps/api && uvicorn app.main:app --reload --port 8000
 web:
@@ -13,3 +13,6 @@ lint:
 	cd apps/api && ruff check app tests
 edge-demo:
 	cd apps/edge-agent && python agent.py run-demo-mission --device edge-03
+
+runtime-evidence:
+	python scripts/generate_runtime_evidence.py
