@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import time
 from dataclasses import dataclass
 from typing import Any
@@ -30,14 +31,18 @@ class InferenceResult:
 class DeterministicDemoProvider:
     name = "deterministic-demo"
 
-    def run(self, media_id: str, quality: dict[str, Any] | None = None) -> InferenceResult:
+    def run(self, media_id: str, quality: dict[str, Any] | None = None, content: bytes | None = None) -> InferenceResult:
         started = time.perf_counter()
-        seed = sum(ord(c) for c in media_id)
+        warnings = list((quality or {}).get("warnings", []))
+        if content:
+            seed = int.from_bytes(hashlib.sha256(content).digest()[:4], "big")
+        else:
+            seed = int.from_bytes(hashlib.sha256(media_id.encode("utf-8")).digest()[:4], "big")
+            warnings.append("input bytes unavailable; deterministic fallback used media identity")
         classes = list(TAXONOMY)
         defect_class = classes[seed % len(classes)]
         tax = TAXONOMY[defect_class]
         confidence = round(0.58 + ((seed * 13) % 37) / 100, 2)
-        warnings = list((quality or {}).get("warnings", []))
         if confidence < 0.70:
             warnings.append("medium-confidence candidate")
         return InferenceResult(

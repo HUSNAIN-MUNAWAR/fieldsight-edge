@@ -528,7 +528,11 @@ def run_deterministic_inference(
     )
     db.add(job)
     db.flush()
-    result = DeterministicDemoProvider().run(media.id, media.quality)
+    try:
+        media_bytes = storage.get(media.storage_key)
+    except FileNotFoundError:
+        media_bytes = None
+    result = DeterministicDemoProvider().run(media.id, media.quality, content=media_bytes)
     review_state = (
         "pending" if result.severity == "critical" or result.confidence < 0.82 else "auto-accepted"
     )
